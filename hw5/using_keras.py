@@ -1,9 +1,7 @@
+from keras.models import Sequential
+from keras.layers import *
 import pandas as pd
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-
 attrs = ['AMB', 'CH4', 'CO', 'NMHC', 'NO', 'NO2',
         'NOx', 'O3', 'PM10', 'PM2.5', 'RAINFALL', 'RH',
         'SO2', 'THC', 'WD_HR', 'WIND_DIR', 'WIND_SPEED', 'WS_HR']
@@ -29,9 +27,6 @@ def read_TrainData(filename, N):
     X = np.array(X)
     Y = np.array(Y)
     return X, Y
-
-#from 1/23 0am, 1am ..23pm... 2/23, 0am, .... ~ 12/31 23p.m, total 2424 hours
-#will give you a matrix 2424 * (18*N features you need)
 def read_TestData(filename, N):
 	#only handle N <= 48(2 days)
     assert N <= 48
@@ -56,63 +51,19 @@ def read_TestData(filename, N):
     test_Y = np.array(test_Y)
     return test_X, test_Y
 
+train_X, train_Y = read_TrainData('train.csv', N=6)
+test_X, test_Y = read_TestData('test.csv', N=6)
 
-class Linear_Regression(object):
-    def __init__(self):
-        pass
-    def train(self, train_X, train_Y):
-        #TODO
-        #W = ?
-        # W=np.dot((np.dot(np.linalg.inv(np.dot(train_X.T,train_X)),train_X.T),train_Y)
-        W=np.linalg.inv(train_X.T.dot(train_X)).dot(train_X.T).dot(train_Y)
-        self.W = W #save W for later prediction
-    def predict(self, test_X):
-        #TODO
-        predict_Y=test_X.dot(self.W)
-        #predict_Y = ...?
-        return predict_Y
-def MSE(predict_Y, real_Y):
-    #TODO :mean square error
-    # loss = ?
-    loss= np.sum((predict_Y-real_Y)**2)/len(predict_Y)
-    return loss
 
-def plot():
-    plt.gcf().clear()
-    x=[]
-    y_test=[]
-    y_train=[]
-    for N in range(1,48):
-        train_X, train_Y = read_TrainData('train.csv', N=N)
-        # print(train_X.T.dot(train_Y))
-        model = Linear_Regression()
-        model.train(train_X, train_Y)
-        test_X, test_Y = read_TestData('test.csv', N=N)
-        predict_X = model.predict(train_X)
-        predict_Y = model.predict(test_X)
-        test_loss = MSE(predict_Y, test_Y)
-        train_loss=MSE(predict_X,train_Y)
-        # print(test_loss)
-        x.append(N)
-        y_train.append(train_loss)
-        y_test.append(test_loss)
-    plt.xlabel('N')
-    plt.ylabel('loss')
-    plt.plot(x,y_train,label='training')
-    plt.plot(x,y_test,label='testing')
-    plt.xticks(np.arange(1,48,3))
-    plt.legend()
-    plt.savefig('./test.png')
-def main() :
-    N = 6
-    train_X, train_Y = read_TrainData('train.csv', N=N)
-    # print(train_X.T.dot(train_Y))
-    model = Linear_Regression()
-    model.train(train_X, train_Y)
-    test_X, test_Y = read_TestData('test.csv', N=N)
-    predict_Y = model.predict(test_X)
-    test_loss = MSE(predict_Y, test_Y)
-    print(test_loss)
+model = Sequential()
+model.add(Dense(16, input_dim = train_X.shape[1], activation='relu'))
+print(train_X.shape[1])
+model.add(Dense(8, activation='relu'))
+model.add(Dense(8, activation='relu'))
+model.add(Dense(8, activation='relu'))
+model.add(Dense(1, activation='relu'))
+model.compile(loss='mean_squared_error', optimizer='adam')
 
-if __name__ == '__main__' :
-    plot()
+model.fit(train_X, train_Y, epochs=50, batch_size=5)
+acc = model.evaluate(test_X, test_Y, batch_size=5)
+print('acc :',acc)
