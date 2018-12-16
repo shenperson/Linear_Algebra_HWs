@@ -1,13 +1,13 @@
-from keras.models import Sequential
-from keras.layers import *
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 attrs = ['AMB', 'CH4', 'CO', 'NMHC', 'NO', 'NO2',
         'NOx', 'O3', 'PM10', 'PM2.5', 'RAINFALL', 'RH',
         'SO2', 'THC', 'WD_HR', 'WIND_DIR', 'WIND_SPEED', 'WS_HR']
 DAYS = np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
-N=1
-
 
 def read_TrainData(filename, N):
     #N: how many hours to be as inputs
@@ -21,18 +21,22 @@ def read_TrainData(filename, N):
         days = np.vsplit(data[i:i+18*20], 20) # shape: 20 * (18, 24)
         concat = np.concatenate(days, axis=1) # shape: (18 feat, 480(day*hr))
         # take every N hours as x and N+1 hour as y
-        hour=0
+        hour=0        
         for j in range(0, concat.shape[1]-N):
             hour=hour+1
             if hour%24==0:
                 hour=0
             features = concat[:, j:j+N].flatten() #the data of previous N hours
             features = np.append(features, [hour]) # add w0
+            features = np.append(features, [1]) # add w0
             X.append(features)
             Y.append([concat[9, j+N]]) #9th feature is PM2.5
     X = np.array(X)
     Y = np.array(Y)
     return X, Y
+
+#from 1/23 0am, 1am ..23pm... 2/23, 0am, .... ~ 12/31 23p.m, total 2424 hours
+#will give you a matrix 2424 * (18*N features you need)
 def read_TestData(filename, N):
 	#only handle N <= 48(2 days)
     assert N <= 48
@@ -42,38 +46,83 @@ def read_TestData(filename, N):
     surplus = DAYS - 20 #remaining days in each month after 20th
     test_X = []
     test_Y = [] #ground truth
-    
     for i in range(12): # 12 month
         # i: start of each month
         start = sum(surplus[:i])*18
         end = sum(surplus[:i+1])*18
         days = np.vsplit(data[start:end], surplus[i])
         concat = np.concatenate(days, axis=1) # shape: (18 feat, (day*hr))
-        hour=0
+        hour=0        
         for j in range(48, concat.shape[1]): #every month starts from 23th
             hour=hour+1
             if hour%24==0:
                 hour=0
             features = concat[:, j-N:j].flatten()
             features = np.append(features, [hour]) # add w0
+            features = np.append(features, [1]) # add w0
             test_X.append(features)
             test_Y.append([concat[9, j]])
     test_X = np.array(test_X)
     test_Y = np.array(test_Y)
     return test_X, test_Y
 
-train_X, train_Y = read_TrainData('train.csv', N=N)
-test_X, test_Y = read_TestData('test.csv', N=N)
 
+class Linear_Regression(object):
+    def __init__(self):
+        pass
+    def train(self, train_X, train_Y):
+        #TODO
+        #W = ?
+        # W=np.dot((np.dot(np.linalg.inv(np.dot(train_X.T,train_X)),train_X.T),train_Y)
+        W=np.linalg.inv(train_X.T.dot(train_X)).dot(train_X.T).dot(train_Y)
+        self.W = W #save W for later prediction
+    def predict(self, test_X):
+        #TODO
+        predict_Y=test_X.dot(self.W)
+        #predict_Y = ...?
+        return predict_Y
+def MSE(predict_Y, real_Y):
+    #TODO :mean square error
+    # loss = ?
+    loss= np.sum((predict_Y-real_Y)**2)/len(predict_Y)
+    return loss
 
-model = Sequential()
-model.add(Dense(16, input_dim = train_X.shape[1], activation='relu'))
-model.add(Dense(8, activation='relu'))
-model.add(Dense(8, activation='relu'))
-model.add(Dense(8, activation='relu'))
-model.add(Dense(1, activation='relu'))
-model.compile(loss='mean_squared_error', optimizer='adam',metrics=['acc'])
+def plot():
+    plt.gcf().clear()
+    x=[]
+    y_test=[]
+    y_train=[]
+    for N in range(1,48):
+        train_X, train_Y = read_TrainData('train.csv', N=N)
+        # print(train_X.T.dot(train_Y))
+        model = Linear_Regression()
+        model.train(train_X, train_Y)
+        test_X, test_Y = read_TestData('test.csv', N=N)
+        predict_X = model.predict(train_X)
+        predict_Y = model.predict(test_X)
+        test_loss = MSE(predict_Y, test_Y)
+        train_loss=MSE(predict_X,train_Y)
+        # print(test_loss)
+        x.append(N)
+        y_train.append(train_loss)
+        y_test.append(test_loss)
+    plt.xlabel('N')
+    plt.ylabel('loss')
+    plt.plot(x,y_train,label='training')
+    plt.plot(x,y_test,label='testing')
+    plt.xticks(np.arange(1,48,3))
+    plt.legend()
+    plt.savefig('./test2.png')
+def main() :
+    N = 6
+    train_X, train_Y = read_TrainData('train.csv', N=N)
+    # print(train_X.T.dot(train_Y))
+    model = Linear_Regression()
+    model.train(train_X, train_Y)
+    test_X, test_Y = read_TestData('test.csv', N=N)
+    predict_Y = model.predict(test_X)
+    test_loss = MSE(predict_Y, test_Y)
+    print(test_loss)
 
-model.fit(train_X, train_Y, epochs=50, batch_size=30)
-loss,acc = model.evaluate(test_X, test_Y, batch_size=30)
-print('testing loss :',loss)
+if __name__ == '__main__' :
+    plot()
