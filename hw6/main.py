@@ -1,9 +1,9 @@
+import matplotlib.pyplot as plt
 from hw6_b06901090 import svd_compress
 from PIL import Image
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
-import matplotlib.pyplot as plt
 
 
 def load_image(img_path):
@@ -68,6 +68,7 @@ err = []
 for k in ks:
     print("Perform SVD for k=%d ..." % k, end='\r')
     imArr_compressed = svd_compress(imArr, K=k)
+    print(np.linalg.matrix_rank(imArr_compressed[:, :, 1]))
     err += [approx_error(imArr, imArr_compressed)]
     save_image(imArr_compressed, 'result_{}.jpg'.format(k))
 

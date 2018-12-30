@@ -100,10 +100,10 @@ if __name__ == "__main__":
         save_image(imArr_compressed, 'test/test'+str(i)+'.jpg')
     # """
     img = load_image2('test/test1.jpg')
-    for i in range(0, 500):
+    for i in range(1, 6):
         try:
             img += load_image2('test/test'+str(i)+'.jpg')
         except:
             pass
-    print(max(img[0]))
+    # print(max(img[0]))
     save_image(img, 'img.jpg')
