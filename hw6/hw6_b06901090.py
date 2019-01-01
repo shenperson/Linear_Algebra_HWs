@@ -77,7 +77,9 @@ def svd_compress(imArr, K=50):
 if __name__ == "__main__":
     img_path = 'img/vegetable_english.jpg'
     imArr = load_image(img_path)
-    # """
+    save_image(svd_compress(imArr, 1)[:, :, 1], 'test/test0.jpg')
+    """
+    a = []
     for i in range(0, 5):
         imArr_compressed = np.zeros(imArr.shape)
         print(i)
@@ -85,19 +87,25 @@ if __name__ == "__main__":
         U, sigma, VT = np.linalg.svd(imArr[:, :, ch], full_matrices=False)
         sigma[0:i] = 0.
         sigma[i+1:] = 0.
+        # sigma[i] /=
         imArr_compressed[:, :, ch] = np.dot(U*sigma, VT)
         # Make imArr_compressed range from 0 to 255
         imArr_compressed[:, :, ch] -= imArr_compressed[:, :, ch].min()
         imArr_compressed[:, :, ch] /= imArr_compressed[:, :, ch].max()
-        imArr_compressed[:, :, ch] *= 255
+        # imArr_compressed[:, :, ch] *= 255
         # imArr_compressed[..., 0] = 0.
         # imArr_compressed[..., 2] = 0.
         imArr_compressed = imArr_compressed[:, :, 1]
         print(imArr_compressed.shape)
+        a.append(imArr_compressed)
         imArr_compressed = imArr_compressed.astype(np.uint8)
         print(imArr_compressed.shape)
         save_image(imArr_compressed, 'test/test'+str(i)+'.jpg')
+    b = (sum(a)/len(a)*255)
+    b = b.astype(np.uint8)
+    save_image(b, 'img3.jpg')
     # """
+    """
     img = load_image2('test/test0.jpg')
     for i in range(1, 5):
         print(i)
@@ -107,3 +115,4 @@ if __name__ == "__main__":
             pass
     # print(max(img[0]))
     save_image(img, 'img.jpg')
+    """
