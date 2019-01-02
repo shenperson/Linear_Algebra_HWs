@@ -68,7 +68,6 @@ err = []
 for k in ks:
     print("Perform SVD for k=%d ..." % k, end='\r')
     imArr_compressed = svd_compress(imArr, K=k)
-    print(np.linalg.matrix_rank(imArr_compressed[:, :, 1]))
     err += [approx_error(imArr, imArr_compressed)]
     save_image(imArr_compressed, 'result_{}.jpg'.format(k))
 

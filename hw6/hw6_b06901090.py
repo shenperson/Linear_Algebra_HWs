@@ -67,6 +67,8 @@ def svd_compress(imArr, K=50):
         sigma[K:] = 0.
         imArr_compressed[:, :, ch] = np.dot(U*sigma, VT)
         # Make imArr_compressed range from 0 to 255
+        # if ch == 1:
+        #     print('\nrank =', np.linalg.matrix_rank(imArr_compressed[:, :, 1]))
         imArr_compressed[:, :, ch] -= imArr_compressed[:, :, ch].min()
         imArr_compressed[:, :, ch] /= imArr_compressed[:, :, ch].max()
         imArr_compressed[:, :, ch] *= 255
@@ -77,7 +79,7 @@ def svd_compress(imArr, K=50):
 if __name__ == "__main__":
     img_path = 'img/vegetable_english.jpg'
     imArr = load_image(img_path)
-    save_image(svd_compress(imArr, 1)[:, :, 1], 'test/test0.jpg')
+    # save_image(svd_compress(imArr, 1)[:, :, 1], 'test/test0.jpg')
     """
     a = []
     for i in range(0, 5):
